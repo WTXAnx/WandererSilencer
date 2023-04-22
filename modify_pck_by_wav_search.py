@@ -1,10 +1,16 @@
+import sys
 import os
 import shutil
 import hashlib
 import json
 from functools import partial
+import stat
 
-kouqiu_path = '口球.jpeg'
+__stderr__ = sys.stderr
+sys.stderr = open('errorlog.txt', 'a')
+
+
+kouqiu_path = '使用说明.txt'
 kouqiu = open(kouqiu_path, "rb")
 
 def md5sum(filename):
@@ -113,7 +119,7 @@ def generate_new_pck(pck_name, pck_path, target_wav_serial_num):
 if __name__ == '__main__':
 
     initial_offset = 0x0000003B #默认PC端
- 
+    print("散兵静音器，目前仅支持中配，B站专栏https://www.bilibili.com/read/cv21635319")
     genshin_path = input("请输入原神根目录路径（X:\\xxx\\Genshin Impact）：")
     if genshin_path == "":
         print("未输入路径，默认使用C:\\Genshin Impact")
@@ -165,24 +171,26 @@ if __name__ == '__main__':
                     wav_file, wav_name = wav_dict[pck_wav_md5]
                     print(f'found wav {wav_name} in pck {pck_name} no.{pck_wav_index}')
                     generate_new_pck(pck_name, pck_path, pck_wav_index)
-    
+
     newpck_list = os.listdir("newpck")
     for pck_name in newpck_list:
         backup_pck_path = os.path.join("backuppck", pck_name)
         pck_path = os.path.join(pck_dir_path, pck_name)
         new_pck_path = os.path.join("newpck", pck_name)
         persistant_pck_path = os.path.join(persistant_path, pck_name)
-        if not os.path.exists(backup_pck_path):
-            shutil.copyfile(pck_path, backup_pck_path)
+        shutil.copyfile(pck_path, backup_pck_path)
         print("Copying ", new_pck_path, " to ", pck_path)
         shutil.copyfile(new_pck_path, pck_path)
         if os.path.exists(persistant_pck_path):
+            os.chmod(persistant_pck_path, stat.S_IWRITE)
             print("Copying ", new_pck_path, " to ", persistant_pck_path)
             shutil.copyfile(new_pck_path, persistant_pck_path)
 
     
     audio_versions_streaming_path = os.path.join(genshin_path, "Genshin Impact Game\\YuanShen_Data\\StreamingAssets\\Audio\\audio_versions_streaming")
     new_audio_versions_streaming_path = "audio_versions_streaming"
+    audio_versions_streaming_backup_path = "audio_versions_streaming_backup"
+    shutil.copyfile(audio_versions_streaming_path, audio_versions_streaming_backup_path)
     with open(audio_versions_streaming_path, 'r') as f:
         with open(new_audio_versions_streaming_path, 'w') as wf:
             for line in f:
@@ -198,9 +206,9 @@ if __name__ == '__main__':
                 wline['fileSize'] = os.path.getsize(pck_path)
                 print(json.dumps(wline))
                 wf.write(json.dumps(wline)+'\n')
-    print("Copying ", new_audio_versions_streaming_path, " to ", audio_versions_streaming_path)
+    print("Updating ", audio_versions_streaming_path)
     shutil.copyfile(new_audio_versions_streaming_path, audio_versions_streaming_path)
 
-    print("一键口球成功！")
-    print("取消口球方法：原神客户端中检测游戏文件完整性")
+    print("一键静音成功！")
+    print("取消静音方法：见专栏https://www.bilibili.com/read/cv21635319")
     os.system("pause")
